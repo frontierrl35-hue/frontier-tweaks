@@ -98,6 +98,22 @@ async function checkPremiumRole(discordUserId) {
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+// TEMPORARY diagnostic route — hits Discord's lightest, fully unauthenticated
+// endpoint to check if this server's outbound IP is broadly rate-limited by
+// Cloudflare, or if it's specific to the heavier /oauth2/token endpoint.
+// Safe to delete once we've diagnosed the 429s.
+app.get('/debug/discord-ping', async (_req, res) => {
+  try {
+    const r = await fetch('https://discord.com/api/v10/gateway', {
+      headers: { 'User-Agent': 'FrontierTweaksAuth (https://frontier-tweaks-1.onrender.com, 1.0)' },
+    });
+    const body = (await r.text()).slice(0, 300);
+    res.json({ status: r.status, body });
+  } catch (err) {
+    res.json({ error: String(err) });
+  }
+});
+
 app.get('/auth/login', (_req, res) => {
   const state = makeState();
   const params = new URLSearchParams({
@@ -106,7 +122,6 @@ app.get('/auth/login', (_req, res) => {
     response_type: 'code',
     scope: 'identify',
     state,
-    prompt: 'none',
   });
   res.redirect(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
 });
