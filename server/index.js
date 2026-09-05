@@ -175,4 +175,69 @@ app.get('/auth/callback', async (req, res) => {
 app.get('/auth/status', async (req, res) => {
   const token = req.query.token;
   if (!token || typeof token !== 'string') {
-    return
+    return res.status(400).json({ success: false, message: 'Missing token.' });
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(token, SESSION_SECRET);
+  } catch {
+    return res.status(401).json({ success: false, message: 'Session expired or invalid. Please sign in again.' });
+  }
+
+  try {
+    // Re-check live rather than trusting whatever premium value was baked
+    // into the token at login time, so a role removed mid-week takes effect
+    // on the next check instead of only after the 7-day token expires.
+    const premium = await checkPremiumRole(payload.sub);
+    res.json({
+      success: true,
+      discordId: payload.sub,
+      username: payload.username,
+      avatar: payload.avatar,
+      premium,
+    });
+  } catch (err) {
+    console.error('auth/status role-check error:', err);
+    // Discord's API hiccuping shouldn't instantly de-premium someone --
+    // fall back to what the session token already says, flagged as stale.
+    res.json({
+      success: true,
+      discordId: payload.sub,
+      username: payload.username,
+      avatar: payload.avatar,
+      premium: payload.premium,
+      offline: true,
+    });
+  }
+});
+
+function successPage(redirectUrl, username) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Signed in</title>
+  <style>body{font-family:-apple-system,Segoe UI,sans-serif;background:#0D0D13;color:#fff;
+  display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+  .card{text-align:center;max-width:360px}
+  a.btn{display:inline-block;margin-top:16px;padding:10px 18px;background:#7C5CFF;color:#fff;
+  border-radius:8px;text-decoration:none;font-weight:600}</style></head>
+  <body><div class="card"><h2>Signed in as ${escapeHtml(username)}</h2>
+  <p>You can close this window and go back to Frontier Tweaks.</p>
+  <a class="btn" href="${redirectUrl}">Return to app</a></div>
+  <script>window.location.href = ${JSON.stringify(redirectUrl)};</script>
+  </body></html>`;
+}
+
+function errorPage(message) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sign-in failed</title>
+  <style>body{font-family:-apple-system,Segoe UI,sans-serif;background:#0D0D13;color:#fff;
+  display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+  .card{text-align:center;max-width:360px}</style></head>
+  <body><div class="card"><h2>Sign-in failed</h2><p>${escapeHtml(message)}</p></div></body></html>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+app.listen(PORT, () => {
+  console.log(`Frontier Tweaks auth server listening on :${PORT}`);
+});
