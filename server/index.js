@@ -77,14 +77,20 @@ function consumeState(state) {
 async function checkPremiumRole(discordUserId) {
   const res = await fetch(
     `https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${discordUserId}`,
-    { headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` } }
+    {
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        'User-Agent': 'FrontierTweaksAuth (https://frontier-tweaks-1.onrender.com, 1.0)',
+      },
+    }
   );
   if (res.status === 404) {
     // User isn't a member of the guild (anymore, or never joined).
     return false;
   }
   if (!res.ok) {
-    throw new Error(`Discord member lookup failed: ${res.status} ${await res.text()}`);
+    const body = (await res.text()).slice(0, 300);
+    throw new Error(`Discord member lookup failed: ${res.status} ${body}`);
   }
   const member = await res.json();
   return Array.isArray(member.roles) && member.roles.includes(DISCORD_PREMIUM_ROLE_ID);
@@ -116,9 +122,14 @@ app.get('/auth/callback', async (req, res) => {
   }
 
   try {
+    const DISCORD_UA = 'FrontierTweaksAuth (https://frontier-tweaks-1.onrender.com, 1.0)';
+
     const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': DISCORD_UA,
+      },
       body: new URLSearchParams({
         client_id: DISCORD_CLIENT_ID,
         client_secret: DISCORD_CLIENT_SECRET,
@@ -127,13 +138,22 @@ app.get('/auth/callback', async (req, res) => {
         redirect_uri: REDIRECT_URI,
       }),
     });
-    if (!tokenRes.ok) throw new Error(`token exchange failed: ${tokenRes.status} ${await tokenRes.text()}`);
+    if (!tokenRes.ok) {
+      const body = (await tokenRes.text()).slice(0, 300);
+      throw new Error(`token exchange failed: ${tokenRes.status} ${body}`);
+    }
     const tokenData = await tokenRes.json();
 
     const userRes = await fetch('https://discord.com/api/v10/users/@me', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        'User-Agent': DISCORD_UA,
+      },
     });
-    if (!userRes.ok) throw new Error(`identify failed: ${userRes.status} ${await userRes.text()}`);
+    if (!userRes.ok) {
+      const body = (await userRes.text()).slice(0, 300);
+      throw new Error(`identify failed: ${userRes.status} ${body}`);
+    }
     const user = await userRes.json();
 
     const premium = await checkPremiumRole(user.id);
@@ -155,69 +175,4 @@ app.get('/auth/callback', async (req, res) => {
 app.get('/auth/status', async (req, res) => {
   const token = req.query.token;
   if (!token || typeof token !== 'string') {
-    return res.status(400).json({ success: false, message: 'Missing token.' });
-  }
-
-  let payload;
-  try {
-    payload = jwt.verify(token, SESSION_SECRET);
-  } catch {
-    return res.status(401).json({ success: false, message: 'Session expired or invalid. Please sign in again.' });
-  }
-
-  try {
-    // Re-check live rather than trusting whatever premium value was baked
-    // into the token at login time, so a role removed mid-week takes effect
-    // on the next check instead of only after the 7-day token expires.
-    const premium = await checkPremiumRole(payload.sub);
-    res.json({
-      success: true,
-      discordId: payload.sub,
-      username: payload.username,
-      avatar: payload.avatar,
-      premium,
-    });
-  } catch (err) {
-    console.error('auth/status role-check error:', err);
-    // Discord's API hiccuping shouldn't instantly de-premium someone --
-    // fall back to what the session token already says, flagged as stale.
-    res.json({
-      success: true,
-      discordId: payload.sub,
-      username: payload.username,
-      avatar: payload.avatar,
-      premium: payload.premium,
-      offline: true,
-    });
-  }
-});
-
-function successPage(redirectUrl, username) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Signed in</title>
-  <style>body{font-family:-apple-system,Segoe UI,sans-serif;background:#0D0D13;color:#fff;
-  display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-  .card{text-align:center;max-width:360px}
-  a.btn{display:inline-block;margin-top:16px;padding:10px 18px;background:#7C5CFF;color:#fff;
-  border-radius:8px;text-decoration:none;font-weight:600}</style></head>
-  <body><div class="card"><h2>Signed in as ${escapeHtml(username)}</h2>
-  <p>You can close this window and go back to Frontier Tweaks.</p>
-  <a class="btn" href="${redirectUrl}">Return to app</a></div>
-  <script>window.location.href = ${JSON.stringify(redirectUrl)};</script>
-  </body></html>`;
-}
-
-function errorPage(message) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sign-in failed</title>
-  <style>body{font-family:-apple-system,Segoe UI,sans-serif;background:#0D0D13;color:#fff;
-  display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-  .card{text-align:center;max-width:360px}</style></head>
-  <body><div class="card"><h2>Sign-in failed</h2><p>${escapeHtml(message)}</p></div></body></html>`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-app.listen(PORT, () => {
-  console.log(`Frontier Tweaks auth server listening on :${PORT}`);
-});
+    return
