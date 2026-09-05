@@ -18,6 +18,20 @@ let getWindow: (() => BrowserWindow | null) | null = null;
 
 export function initAuthService(windowGetter: () => BrowserWindow | null) {
   getWindow = windowGetter;
+  warmAuthServer();
+}
+
+/** Free-tier Render instances spin down after inactivity and take 50+
+ *  seconds to wake back up on the next request. Firing a harmless /health
+ *  ping the moment the app opens means the instance is usually already
+ *  awake by the time someone actually clicks "Sign in", instead of them
+ *  staring at a blank browser tab for a minute wondering if it's broken.
+ *  Fire-and-forget: failures here are not shown to the user, since the
+ *  real sign-in flow will simply retry the wake-up itself. */
+function warmAuthServer() {
+  fetch(`${AUTH_SERVER_URL}/health`, { signal: AbortSignal.timeout(60_000) }).catch(() => {
+    // Ignored — startLogin()/refreshStatus() will surface any real problem.
+  });
 }
 
 function broadcast(status: AuthStatus) {
