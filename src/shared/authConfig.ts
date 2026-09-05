@@ -2,7 +2,7 @@
 // server/README.md). Everything else — OAuth client id/secret, bot token,
 // guild id, role id — lives only in the backend's environment, never here,
 // since this file ships inside the app anyone can unzip and read.
-export const AUTH_SERVER_URL = 'https://your-backend.example.com';
+export const AUTH_SERVER_URL = 'https://frontier-tweaks-1.onrender.com';
 
 // Must exactly match the custom protocol registered in main.ts and in your
 // Discord app's OAuth redirect isn't relevant here (the redirect goes to the
