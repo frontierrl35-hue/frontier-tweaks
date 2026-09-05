@@ -1,0 +1,188 @@
+@import 'tailwindcss';
+
+/* NOTE: for a fully offline build, replace this with locally-bundled
+   Poppins .woff2 files under src/renderer/assets/fonts and @font-face them
+   instead — desktop apps shouldn't depend on network access to render text. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --ft-bg: #08080c;
+  --ft-bg-raised: #0b0b11;
+  --ft-surface: #131318;
+  --ft-surface-raised: #191922;
+  --ft-surface-sunken: #0e0e14;
+  --ft-border: #202029;
+  --ft-border-hover: #2f2f3c;
+  --ft-text-primary: #f5f5fa;
+  --ft-text-secondary: #9a9aab;
+  --ft-text-muted: #63636f;
+
+  /* Brand: violet stays the identity color used for chrome (logo, avatar,
+     loading screen). Pink is the app's action color — every "press me" CTA
+     (Apply, Apply All, Upgrade, Game Mode) uses this pink-toned gradient. */
+  --ft-accent: #7c5cff;
+  --ft-accent-light: #a78bff;
+  --ft-accent-deep: #4c2fd1;
+  --ft-accent-soft: rgba(124, 92, 255, 0.14);
+  --ft-accent-glow: rgba(124, 92, 255, 0.35);
+  --ft-accent-2: #ff3d81;
+  --ft-accent-2-soft: rgba(255, 61, 129, 0.14);
+  --ft-accent-2-glow: rgba(255, 61, 129, 0.4);
+  --ft-gradient: linear-gradient(135deg, #ff8fb4 0%, #ff3d81 55%, #d6216a 100%);
+
+  --ft-success: #2ecf85;
+  --ft-success-soft: rgba(46, 207, 133, 0.12);
+  --ft-warning: #fbbf24;
+  --ft-warning-soft: rgba(251, 191, 36, 0.12);
+  --ft-danger: #f8555f;
+  --ft-danger-soft: rgba(248, 85, 95, 0.12);
+
+  --ft-radius-sm: 8px;
+  --ft-radius-md: 12px;
+  --ft-radius-lg: 16px;
+  --ft-radius-pill: 999px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--ft-bg);
+  color: var(--ft-text-primary);
+  font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ft-border-hover);
+  border-radius: 8px;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+.drag {
+  -webkit-app-region: drag;
+}
+
+.ft-card {
+  background: var(--ft-surface);
+  border: 1px solid var(--ft-border);
+  border-radius: var(--ft-radius-lg);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.ft-card:hover {
+  border-color: var(--ft-border-hover);
+}
+
+.ft-glow-on-hover:hover {
+  box-shadow: 0 0 0 1px var(--ft-accent-glow), 0 8px 30px -8px var(--ft-accent-glow);
+}
+
+/* Reserved for the app's primary calls to action (Apply, Apply All, the
+   Game Mode power button) — the gradient is spent in one place so it still
+   reads as "press me" rather than becoming background decoration. */
+.ft-btn-gradient {
+  background: var(--ft-gradient);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 8px 24px -10px var(--ft-accent-2-glow);
+}
+.ft-btn-gradient:hover {
+  filter: brightness(1.08);
+}
+.ft-btn-gradient:active {
+  filter: brightness(0.96);
+}
+
+.ft-pill-outline {
+  border-radius: var(--ft-radius-pill);
+  background: linear-gradient(var(--ft-bg-raised), var(--ft-bg-raised)) padding-box,
+    var(--ft-gradient) border-box;
+  border: 1px solid transparent;
+}
+
+/* Pill switch used for every on/off tweak — pink means "applied", matching
+   the app's one reserved action color instead of reusing the brand violet. */
+.ft-toggle {
+  width: 38px;
+  height: 22px;
+  border-radius: var(--ft-radius-pill);
+  background: var(--ft-border);
+  border: 1px solid var(--ft-border);
+  position: relative;
+  transition: background 150ms ease, border-color 150ms ease;
+  flex-shrink: 0;
+}
+.ft-toggle[data-on='true'] {
+  background: var(--ft-accent-2);
+  border-color: var(--ft-accent-2);
+}
+.ft-toggle[data-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ft-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  transition: transform 150ms ease;
+}
+.ft-toggle[data-on='true'] .ft-toggle-thumb {
+  transform: translateX(16px);
+}
+
+.ft-chip {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--ft-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ft-surface-sunken);
+  border: 1px solid var(--ft-border);
+}
+
+.ft-tag-new {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: var(--ft-radius-pill);
+  color: var(--ft-success);
+  background: var(--ft-success-soft);
+}
+
+@keyframes ft-fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.ft-page-enter {
+  animation: ft-fade-slide-in 220ms ease both;
+}

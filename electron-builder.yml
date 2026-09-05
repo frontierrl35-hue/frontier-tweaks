@@ -1,0 +1,39 @@
+appId: com.frontiertweaks.app
+productName: Frontier Tweaks
+copyright: Copyright © Frontier Tweaks
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+  requestedExecutionLevel: requireAdministrator
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Frontier Tweaks
+  artifactName: "Frontier-Tweaks-Setup-${version}.exe"
+# electron-builder bundles a small resources/app-update.yml into the packaged
+# app, generated from this section — that's the file electron-updater reads
+# at runtime to know where to check for new versions. Nothing to write by
+# hand; just fill in owner/repo below and it's produced automatically on
+# every `npm run release`.
+#
+# GitHub Releases needs zero server infrastructure: `npm run release` builds
+# the installer, then uploads it (plus the generated latest.yml) as a GitHub
+# Release. Requires a GH_TOKEN env var (a GitHub personal access token with
+# `repo` scope) at publish time — CI or your local shell, either works.
+publish:
+  provider: github
+  owner: YOUR_GITHUB_USERNAME_OR_ORG
+  repo: frontier-tweaks
